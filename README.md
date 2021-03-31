@@ -1,6 +1,5 @@
 # NES-Tetris
-A remake of Tetris for the NES. I researched frame data for the game to make the mechanics work just like the original. I implemented mechanics like das and the 
-specifics of the gravity in the game. The B game is not yet implemented. The program is a java application and can be run like one, or imported as an intellij 
+A remake of Tetris for the NES created using libGDX. I researched frame data for the game to make the mechanics work just like the original. I implemented mechanics like das and the specifics of the gravity in the game. The B game is not yet implemented. The program is a java application and can be run like one, or imported as an intellij 
 project and run from within there. All of the .idea files are included in the repo.
 
 Here are some screenshots of the game! It even has original music and sounds.
