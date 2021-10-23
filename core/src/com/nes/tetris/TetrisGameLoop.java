@@ -22,9 +22,10 @@ public class TetrisGameLoop implements GameLoop {
     private final TextureAtlas textureAtlas;
     private final SpriteBatch batch;
     private final CommonGameControls gameControls;
-    int leftBlock = 4, rightBlock = 5;
     private final boolean screenClearer;
     private final int playerNumber;
+    private final int width;
+    int leftBlock = 4, rightBlock = 5;
     private Texture img;
     private ArrayList<Integer> linesBroken;
     private int ARE;
@@ -55,7 +56,6 @@ public class TetrisGameLoop implements GameLoop {
     private String nextPiece;
     private Sprite[] stats;
     private int[] statNums;
-    private final int width;
     private int endTimer;
     private int endCurtain;
     private Music endLock;
@@ -63,6 +63,7 @@ public class TetrisGameLoop implements GameLoop {
     public TetrisGameLoop(boolean screenClearer,
                           int playerNumber,
                           int width,
+                          long randomSeed,
                           TextureAtlas textureAtlas,
                           CommonGameControls commonGameControls) {
         this.screenClearer = screenClearer;
@@ -73,10 +74,10 @@ public class TetrisGameLoop implements GameLoop {
         this.gameControls = commonGameControls;
 
         batch = new SpriteBatch();
-        init();
+        init(randomSeed);
     }
 
-    private void init() {
+    private void init(long randomSeed) {
         img = new Texture("A.png");
         endTimer = 120;
         broken = false;
@@ -94,7 +95,7 @@ public class TetrisGameLoop implements GameLoop {
         downUnheld = true;
         showNext = true;
         score = 0;
-        board = new TetrisGame(level);
+        board = new TetrisGame(randomSeed);
         statNums = new int[7];
         currentPiece = board.next();
         statNums[board.getLetterPiece(currentPiece)]++;

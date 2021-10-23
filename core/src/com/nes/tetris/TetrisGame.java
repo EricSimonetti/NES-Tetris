@@ -7,13 +7,15 @@ import java.util.Random;
 
 public class TetrisGame {
     private final int BLOCK_SIZE = 24;
-    private Sprite[][] grid;
+    private final Sprite[][] grid;
+    private final Random random;
     private String next, current;
     private int currentPosX, currentPosY;
     private int[] xPos, yPos;
     private int currentR = 0;
 
-    TetrisGame(int level){
+    TetrisGame(long randomSeed) {
+        random = new Random(randomSeed);
         this.grid = new Sprite[22][10];
         this.next = "";
         this.current = "";
@@ -23,13 +25,13 @@ public class TetrisGame {
         this.yPos = new int[4];
     }
 
-    public String next(){
+    public String next() {
         this.current = this.next;
 
         String next = "";
-        int random = (new Random()).nextInt(8); // I, O, T, S, Z, J, L, and dummy.
-        next = getPieceLetter(random);
-        if(next.equals("") || next.equals(current)) //if the next piece landed on the dummy or is the same as the last peice
+        int nextInt = random.nextInt(8); // I, O, T, S, Z, J, L, and dummy.
+        next = getPieceLetter(nextInt);
+        if (next.equals("") || next.equals(current)) //if the next piece landed on the dummy or is the same as the last peice
             next = reroll();                        //reroll
         this.next = next;
 
@@ -47,82 +49,105 @@ public class TetrisGame {
     //    return ((((value >> 9) & 1) ^ ((value >> 1) & 1)) << 15) | (value >> 1);
     //}
 
-    private void initCurrent(){
-        switch(current){
-            case "I":  initI();
+    private void initCurrent() {
+        switch (current) {
+            case "I":
+                initI();
                 break;
-            case "O":  initO();
+            case "O":
+                initO();
                 break;
-            case "T":  initT();
+            case "T":
+                initT();
                 break;
-            case "S":  initS();
+            case "S":
+                initS();
                 break;
-            case "Z":  initZ();
+            case "Z":
+                initZ();
                 break;
-            case "J":  initJ();
+            case "J":
+                initJ();
                 break;
-            case "L":  initL();
+            case "L":
+                initL();
                 break;
         }
     }
 
-    private String reroll(){
-        int random = (new Random()).nextInt(7); // I, O, T, S, Z, J, and L.
-        return getPieceLetter(random);
+    private String reroll() {
+        int nextInt = random.nextInt(7); // I, O, T, S, Z, J, and L.
+        return getPieceLetter(nextInt);
     }
 
-    public String getPieceLetter(int i){
-        switch(i){
-            case 0:  return "T";
+    public String getPieceLetter(int i) {
+        switch (i) {
+            case 0:
+                return "T";
 
-            case 1:  return "J";
+            case 1:
+                return "J";
 
-            case 2:  return "Z";
+            case 2:
+                return "Z";
 
-            case 3:  return "O";
+            case 3:
+                return "O";
 
-            case 4:  return "S";
+            case 4:
+                return "S";
 
-            case 5:  return "L";
+            case 5:
+                return "L";
 
-            case 6:  return "I";
+            case 6:
+                return "I";
         }
         return "";
     }
 
-    public int getLetterPiece(String piece){
-        switch(piece){
-            case "T":  return 0;
+    public int getLetterPiece(String piece) {
+        switch (piece) {
+            case "T":
+                return 0;
 
-            case "J":  return 1;
+            case "J":
+                return 1;
 
-            case "Z":  return 2;
+            case "Z":
+                return 2;
 
-            case "O":  return 3;
+            case "O":
+                return 3;
 
-            case "S":  return 4;
+            case "S":
+                return 4;
 
-            case "L":  return 5;
+            case "L":
+                return 5;
 
-            case "I":  return 6;
+            case "I":
+                return 6;
         }
         return -1;
     }
 
-    public int getCurrentR(){
+    public int getCurrentR() {
         return currentR;
     }
-    public int getCurrentPosX(){
+
+    public int getCurrentPosX() {
         return currentPosX;
     }
-    public int getCurrentPosY(){
+
+    public int getCurrentPosY() {
         return currentPosY;
     }
 
-    public int drop(){
+    public int drop() {
         initCurrent();
-        for(int i = 0; i<4; i++){
-            if(yPos[i]-1 < 0 || (grid[yPos[i]-1][xPos[i]])!=null){
+        for (int i = 0; i < 4; i++) {
+            if (yPos[i] - 1 < 0 || (grid[yPos[i] - 1][xPos[i]]) != null) {
                 return yPos[i];
             }
         }
@@ -131,94 +156,96 @@ public class TetrisGame {
         return -1;
     }
 
-    public boolean testEnd(){
+    public boolean testEnd() {
         boolean end = true;
-        for(int i = 0; i<4; i++) {
-            if(yPos[i]>=0&&xPos[i]>=0&&xPos[i]<=9) {
+        for (int i = 0; i < 4; i++) {
+            if (yPos[i] >= 0 && xPos[i] >= 0 && xPos[i] <= 9) {
                 end = end && grid[yPos[i]][xPos[i]] == null;
             }
         }
         return !end;
     }
 
-    public ArrayList<Integer> addCurr(Sprite[] sprites, int type){
+    public ArrayList<Integer> addCurr(Sprite[] sprites, int type) {
         ArrayList<Integer> linesBroken = new ArrayList<>();
-        for(int i = 0; i<4; i++){
+        for (int i = 0; i < 4; i++) {
             grid[yPos[i]][xPos[i]] = sprites[i];
             grid[yPos[i]][xPos[i]].setOrigin(type, 2);
             boolean broken = true;
-            for(int j = 0; j<10; j++){
-                broken = broken && grid[yPos[i]][j]!=null;
+            for (int j = 0; j < 10; j++) {
+                broken = broken && grid[yPos[i]][j] != null;
             }
-            if(broken)
+            if (broken)
                 linesBroken.add(yPos[i]);
         }
         return linesBroken;
     }
 
-    public Sprite[][] getSprites(){
+    public Sprite[][] getSprites() {
         return grid;
     }
 
-    public void initI(){
-        for(int i = 0; i<4; i++){
-            if(currentR == 0 || currentR == 2) {
-                xPos[i] = (currentPosX-2)+i;
+    public void initI() {
+        for (int i = 0; i < 4; i++) {
+            if (currentR == 0 || currentR == 2) {
+                xPos[i] = (currentPosX - 2) + i;
                 yPos[i] = currentPosY;
-            }
-            else {
+            } else {
                 xPos[i] = currentPosX;
-                yPos[i] = (currentPosY-1)+i;
+                yPos[i] = (currentPosY - 1) + i;
             }
         }
     }
-    public void initO(){
+
+    public void initO() {
         int count = 0;
-        for(int i = 0; i<2; i++){
-            for(int j = 0; j<2; j++){
-                xPos[count] = (currentPosX-1)+i;
-                yPos[count] = (currentPosY-1)+j;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                xPos[count] = (currentPosX - 1) + i;
+                yPos[count] = (currentPosY - 1) + j;
                 count++;
             }
         }
     }
-    public void initT(){
-        if(currentR == 0){
-            for(int i = 0; i<3; i++){
-                xPos[i] = (currentPosX-1)+i;
-                yPos[i] = currentPosY;
-            }
-            xPos[3] = currentPosX;
-            yPos[3] = currentPosY-1;
-        }
-        if(currentR == 1){
-            for(int i = 0; i<3; i++){
-                xPos[i] = currentPosX;
-                yPos[i] = (currentPosY-1)+i;
-            }
-            xPos[3] = currentPosX-1;
-            yPos[3] = currentPosY;
-        }
-        if(currentR == 2){
-            for(int i = 0; i<3; i++) {
+
+    public void initT() {
+        if (currentR == 0) {
+            for (int i = 0; i < 3; i++) {
                 xPos[i] = (currentPosX - 1) + i;
                 yPos[i] = currentPosY;
             }
             xPos[3] = currentPosX;
-            yPos[3] = currentPosY+1;
+            yPos[3] = currentPosY - 1;
         }
-        if(currentR == 3){
-            for(int i = 0; i<3; i++){
+        if (currentR == 1) {
+            for (int i = 0; i < 3; i++) {
                 xPos[i] = currentPosX;
-                yPos[i] = (currentPosY-1)+i;
+                yPos[i] = (currentPosY - 1) + i;
             }
-            xPos[3] = currentPosX+1;
+            xPos[3] = currentPosX - 1;
+            yPos[3] = currentPosY;
+        }
+        if (currentR == 2) {
+            for (int i = 0; i < 3; i++) {
+                xPos[i] = (currentPosX - 1) + i;
+                yPos[i] = currentPosY;
+            }
+            xPos[3] = currentPosX;
+            yPos[3] = currentPosY + 1;
+        }
+        if (currentR == 3) {
+            for (int i = 0; i < 3; i++) {
+                xPos[i] = currentPosX;
+                yPos[i] = (currentPosY - 1) + i;
+            }
+            xPos[3] = currentPosX + 1;
             yPos[3] = currentPosY;
         }
     }
-    public void initS(){
+
+    public void initS() {
         int count = 0;
-        if(currentR == 0 || currentR == 2) {
+        if (currentR == 0 || currentR == 2) {
             for (int i = 0; i < 2; i++) {
                 xPos[count] = (currentPosX - 1) + i;
                 yPos[count] = currentPosY - 1;
@@ -229,8 +256,7 @@ public class TetrisGame {
                 yPos[count] = currentPosY;
                 count++;
             }
-        }
-        else {
+        } else {
             for (int i = 0; i < 2; i++) {
                 xPos[count] = currentPosX;
                 yPos[count] = (currentPosY) + i;
@@ -243,9 +269,10 @@ public class TetrisGame {
             }
         }
     }
-    public void initZ(){
+
+    public void initZ() {
         int count = 0;
-        if(currentR == 0 || currentR == 2) {
+        if (currentR == 0 || currentR == 2) {
             for (int i = 0; i < 2; i++) {
                 xPos[count] = (currentPosX - 1) + i;
                 yPos[count] = currentPosY;
@@ -256,8 +283,7 @@ public class TetrisGame {
                 yPos[count] = currentPosY - 1;
                 count++;
             }
-        }
-        else {
+        } else {
             for (int i = 0; i < 2; i++) {
                 xPos[count] = currentPosX;
                 yPos[count] = (currentPosY - 1) + i;
@@ -270,33 +296,34 @@ public class TetrisGame {
             }
         }
     }
-    public void initJ(){
-        if(currentR == 0){
-            for(int i = 0; i<3; i++){
-                xPos[i] = (currentPosX-1)+i;
+
+    public void initJ() {
+        if (currentR == 0) {
+            for (int i = 0; i < 3; i++) {
+                xPos[i] = (currentPosX - 1) + i;
                 yPos[i] = currentPosY;
             }
             xPos[3] = currentPosX + 1;
             yPos[3] = currentPosY - 1;
         }
-        if(currentR == 1){
-            for(int i = 0; i<3; i++){
+        if (currentR == 1) {
+            for (int i = 0; i < 3; i++) {
                 xPos[i] = currentPosX;
                 yPos[i] = (currentPosY - 1) + i;
             }
             xPos[3] = currentPosX - 1;
             yPos[3] = currentPosY - 1;
         }
-        if(currentR == 2){
-            for(int i = 0; i<3; i++){
-                xPos[i] = (currentPosX-1)+i;
+        if (currentR == 2) {
+            for (int i = 0; i < 3; i++) {
+                xPos[i] = (currentPosX - 1) + i;
                 yPos[i] = currentPosY;
             }
             xPos[3] = currentPosX - 1;
             yPos[3] = currentPosY + 1;
         }
-        if(currentR == 3){
-            for(int i = 0; i<3; i++){
+        if (currentR == 3) {
+            for (int i = 0; i < 3; i++) {
                 xPos[i] = currentPosX;
                 yPos[i] = (currentPosY - 1) + i;
             }
@@ -304,33 +331,34 @@ public class TetrisGame {
             yPos[3] = currentPosY + 1;
         }
     }
-    public void initL(){
-        if(currentR == 0){
-            for(int i = 0; i<3; i++){
-                xPos[i] = (currentPosX-1)+i;
+
+    public void initL() {
+        if (currentR == 0) {
+            for (int i = 0; i < 3; i++) {
+                xPos[i] = (currentPosX - 1) + i;
                 yPos[i] = currentPosY;
             }
             xPos[3] = currentPosX - 1;
             yPos[3] = currentPosY - 1;
         }
-        if(currentR == 1){
-            for(int i = 0; i<3; i++){
+        if (currentR == 1) {
+            for (int i = 0; i < 3; i++) {
                 xPos[i] = currentPosX;
                 yPos[i] = (currentPosY - 1) + i;
             }
             xPos[3] = currentPosX - 1;
             yPos[3] = currentPosY + 1;
         }
-        if(currentR == 2){
-            for(int i = 0; i<3; i++){
-                xPos[i] = (currentPosX-1)+i;
+        if (currentR == 2) {
+            for (int i = 0; i < 3; i++) {
+                xPos[i] = (currentPosX - 1) + i;
                 yPos[i] = currentPosY;
             }
             xPos[3] = currentPosX + 1;
             yPos[3] = currentPosY + 1;
         }
-        if(currentR == 3){
-            for(int i = 0; i<3; i++){
+        if (currentR == 3) {
+            for (int i = 0; i < 3; i++) {
                 xPos[i] = currentPosX;
                 yPos[i] = (currentPosY - 1) + i;
             }
@@ -339,114 +367,113 @@ public class TetrisGame {
         }
     }
 
-    public boolean right(){
+    public boolean right() {
         boolean right = checkRight();
-        if(right) {
+        if (right) {
             currentPosX++;
             initCurrent();
         }
         return right;
     }
 
-    public boolean checkRight(){
+    public boolean checkRight() {
         initCurrent();
-        for(int i = 0; i<4; i++){
-            if(xPos[i]+1 > 9 || (grid[yPos[i]][xPos[i]+1])!=null){
+        for (int i = 0; i < 4; i++) {
+            if (xPos[i] + 1 > 9 || (grid[yPos[i]][xPos[i] + 1]) != null) {
                 return false;
             }
         }
         return true;
     }
 
-    public boolean left(){
+    public boolean left() {
         boolean left = checkLeft();
-        if(left) {
+        if (left) {
             currentPosX--;
             initCurrent();
         }
         return left;
     }
 
-    public boolean checkLeft(){
+    public boolean checkLeft() {
         initCurrent();
-        for(int i = 0; i<4; i++){
-            if(xPos[i]-1 < 0 || (grid[yPos[i]][xPos[i]-1])!=null){
+        for (int i = 0; i < 4; i++) {
+            if (xPos[i] - 1 < 0 || (grid[yPos[i]][xPos[i] - 1]) != null) {
                 return false;
             }
         }
         return true;
     }
 
-    public void rotateCW(){
+    public void rotateCW() {
         int oldR = currentR;
-        if(currentR==3)
+        if (currentR == 3)
             currentR = 0;
         else
             currentR++;
-        if(!checkRotation()){
+        if (!checkRotation()) {
             currentR = oldR;
         }
     }
 
-    public void rotateCCW(){
+    public void rotateCCW() {
         int oldR = currentR;
-        if(currentR==0)
+        if (currentR == 0)
             currentR = 3;
         else
             currentR--;
-        if(!checkRotation()){
+        if (!checkRotation()) {
             currentR = oldR;
         }
     }
 
-    private boolean checkRotation(){
+    private boolean checkRotation() {
         initCurrent();
-        for(int i = 0; i<4; i++){
-            if(xPos[i] < 0 || xPos[i] > 9 || yPos[i]< 0 || (grid[yPos[i]][xPos[i]])!=null){
+        for (int i = 0; i < 4; i++) {
+            if (xPos[i] < 0 || xPos[i] > 9 || yPos[i] < 0 || (grid[yPos[i]][xPos[i]]) != null) {
                 return false;
             }
         }
         return true;
     }
 
-    public void removeSprite(int x, int y){
+    public void removeSprite(int x, int y) {
         grid[y][x] = null;
     }
 
-    public void moveLines(ArrayList<Integer> lines){
+    public void moveLines(ArrayList<Integer> lines) {
         int smallest = 30;
-        for(int j: lines) {
+        for (int j : lines) {
             if (j < smallest)
                 smallest = j;
         }
         moveLines(smallest);
     }
 
-    private void moveLines(int start){
-        for(int i = start; i<grid.length-1; i++){
-            int nextline = i+1;
+    private void moveLines(int start) {
+        for (int i = start; i < grid.length - 1; i++) {
+            int nextline = i + 1;
             boolean empty = true;
-            while(empty) {
+            while (empty) {
                 for (int j = 0; j < grid[nextline].length; j++) {
                     if (grid[nextline][j] != null) {
                         empty = false;
                     }
                 }
-                if(empty){
+                if (empty) {
                     nextline++;
-                    if(nextline==22){
+                    if (nextline == 22) {
                         empty = false;
                     }
                 }
             }
-            if(nextline == 22){
-                i = grid.length-1;
-            }
-            else {
+            if (nextline == 22) {
+                i = grid.length - 1;
+            } else {
                 grid[i] = grid[nextline];
                 for (int j = 0; j < grid[i].length; j++) {
                     if (grid[i][j] != null) {
-                        grid[i][j].translateY(-BLOCK_SIZE*(nextline-i));
+                        grid[i][j].translateY(-BLOCK_SIZE * (nextline - i));
                     }
                 }
                 grid[nextline] = new Sprite[10];
@@ -454,9 +481,9 @@ public class TetrisGame {
         }
     }
 
-    public boolean testFast(){
+    public boolean testFast() {
         boolean empty = true;
-        for(int i = 14; i<grid.length; i++) {
+        for (int i = 14; i < grid.length; i++) {
             for (int j = 0; j < grid[14].length; j++) {
                 if (grid[14][j] != null) {
                     empty = false;

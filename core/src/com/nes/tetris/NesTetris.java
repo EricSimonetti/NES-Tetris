@@ -14,18 +14,20 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 
 public class NesTetris extends ApplicationAdapter implements CommonGameControls {
     private final double FRAME_PERIOD = (1 / 60.0988) * 1000;
+    private final List<GameLoop> gameLoops = new ArrayList<>();
+    private final Map<Integer, Boolean> ends = new HashMap<>();
+    private final int width;
     int frameCounter = 0;
     private boolean paused;
-    private final List<GameLoop> gameLoops = new ArrayList<>();
     private boolean legal;
     private long legalTimer;
     private boolean title;
@@ -41,11 +43,9 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
     private boolean menuA;
     private boolean topLevel;
     private int levelSelect;
-    private final Map<Integer, Boolean> ends = new HashMap<>();
     private TextureAtlas textureAtlas;
     private SpriteBatch batch;
     private Texture img;
-    private final int width;
 
     public NesTetris(int width) {
         this.width = width;
@@ -92,8 +92,11 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
         beepAlt = Gdx.audio.newSound(Gdx.files.internal("sfx/menuSelect-alt.mp3"));
         pauseBeep = Gdx.audio.newSound(Gdx.files.internal("sfx/pause.mp3"));
 
-        gameLoops.add(new TetrisGameLoop(true, 1, width, textureAtlas, this));
-        gameLoops.add(new TetrisGameLoop(false, 2, width, textureAtlas, this));
+
+        long timeInMillis = Calendar.getInstance().getTimeInMillis();
+
+        gameLoops.add(new TetrisGameLoop(true, 1, width, timeInMillis, textureAtlas, this));
+        gameLoops.add(new TetrisGameLoop(false, 2, width, timeInMillis, textureAtlas, this));
 
         gameLoops.forEach(gameLoop -> {
             ends.put(gameLoop.getPlayerNumber(), false);
