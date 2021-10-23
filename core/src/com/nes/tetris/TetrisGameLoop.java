@@ -1,9 +1,11 @@
 package com.nes.tetris;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.ControllerAdapter;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -16,6 +18,13 @@ import java.util.Arrays;
 public class TetrisGameLoop implements GameLoop {
 
     private static final int[] HEIGHT_HELPER = {384, 339, 288, 240, 192, 147, 105};
+    private final int KEY_RIGHT;
+    private final int KEY_LEFT;
+    private final int KEY_DOWN;
+    private final int KEY_SHOW_NEXT;
+    private final int KEY_PAUSE;
+    private final int KEY_ROTATE_RIGHT;
+    private final int KEY_ROTATE_LEFT;
     private final int START_X = 288, START_Y = 72;
     private final int BLOCK_SIZE = 24;
     private final int[] gravities = {48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1};
@@ -26,6 +35,16 @@ public class TetrisGameLoop implements GameLoop {
     private final int playerNumber;
     private final int width;
     int leftBlock = 4, rightBlock = 5;
+    private boolean key_right_just_pressed;
+    private boolean key_right_pressed;
+    private boolean key_left_just_pressed;
+    private boolean key_left_pressed;
+    private boolean key_down_just_pressed;
+    private boolean key_down_pressed;
+    private boolean key_show_next_just_pressed;
+    private boolean key_pause_just_pressed;
+    private boolean key_rotate_right_just_pressed;
+    private boolean key_rotate_left_just_pressed;
     private Texture img;
     private ArrayList<Integer> linesBroken;
     private int ARE;
@@ -59,6 +78,7 @@ public class TetrisGameLoop implements GameLoop {
     private int endTimer;
     private int endCurtain;
     private Music endLock;
+    private final Controller controller;
 
     public TetrisGameLoop(boolean screenClearer,
                           int playerNumber,
@@ -74,6 +94,21 @@ public class TetrisGameLoop implements GameLoop {
         this.gameControls = commonGameControls;
 
         batch = new SpriteBatch();
+
+        if (Controllers.getControllers().size < 2) {
+            throw new RuntimeException("Needs two controllers at least");
+        }
+
+        controller = Controllers.getControllers().get(playerNumber - 1);
+
+        KEY_RIGHT = controller.getMapping().buttonDpadRight;
+        KEY_LEFT = controller.getMapping().buttonDpadLeft;
+        KEY_DOWN = controller.getMapping().buttonDpadDown;
+        KEY_ROTATE_LEFT = controller.getMapping().buttonA;
+        KEY_ROTATE_RIGHT = controller.getMapping().buttonB;
+        KEY_PAUSE = controller.getMapping().buttonStart;
+        KEY_SHOW_NEXT = controller.getMapping().buttonBack;
+
         init(randomSeed);
     }
 
@@ -124,6 +159,52 @@ public class TetrisGameLoop implements GameLoop {
         tetris = Gdx.audio.newSound(Gdx.files.internal("sfx/tetris.mp3"));
         clear = Gdx.audio.newSound(Gdx.files.internal("sfx/clear.mp3"));
 
+        controller.addListener(new ControllerAdapter() {
+            @Override
+            public boolean buttonDown(Controller controller, int buttonIndex) {
+
+                if (KEY_RIGHT == buttonIndex) {
+                    key_right_just_pressed = true;
+                    key_right_pressed = true;
+                }
+                if (KEY_LEFT == buttonIndex) {
+                    key_left_just_pressed = true;
+                    key_left_pressed = true;
+                }
+                if (KEY_DOWN == buttonIndex) {
+                    key_down_just_pressed = true;
+                    key_down_pressed = true;
+                }
+                if (KEY_SHOW_NEXT == buttonIndex) {
+                    key_show_next_just_pressed = true;
+                }
+                if (KEY_PAUSE == buttonIndex) {
+                    key_pause_just_pressed = true;
+                }
+                if (KEY_ROTATE_RIGHT == buttonIndex) {
+                    key_rotate_right_just_pressed = true;
+                }
+                if (KEY_ROTATE_LEFT == buttonIndex) {
+                    key_rotate_left_just_pressed = true;
+                }
+
+                return super.buttonDown(controller, buttonIndex);
+            }
+
+            @Override
+            public boolean buttonUp(Controller controller, int buttonIndex) {
+                if (KEY_DOWN == buttonIndex) {
+                    key_down_pressed = false;
+                }
+                if (KEY_RIGHT == buttonIndex) {
+                    key_right_pressed = false;
+                }
+                if (KEY_LEFT == buttonIndex) {
+                    key_left_pressed = false;
+                }
+                return super.buttonUp(controller, buttonIndex);
+            }
+        });
     }
 
     @Override
@@ -164,8 +245,8 @@ public class TetrisGameLoop implements GameLoop {
                     }
                 }
 
-                if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
-                    if (!Gdx.input.isKeyPressed(Input.Keys.DOWN) && !Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                if (key_right_just_pressed) {
+                    if (!key_down_pressed) {
                         if (board.right()) {
                             shift.play();
                             gamePiece.right();
@@ -173,8 +254,8 @@ public class TetrisGameLoop implements GameLoop {
                         }
                     }
                     normalGrav();
-                } else if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
-                    if (!Gdx.input.isKeyPressed(Input.Keys.DOWN) && !Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                } else if (key_left_just_pressed) {
+                    if (!key_down_pressed) {
                         if (board.left()) {
                             shift.play();
                             gamePiece.left();
@@ -182,8 +263,8 @@ public class TetrisGameLoop implements GameLoop {
                         }
                     }
                     normalGrav();
-                } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-                    if (!Gdx.input.isKeyPressed(Input.Keys.DOWN) && !Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                } else if (key_right_pressed) {
+                    if (!key_down_pressed) {
                         if (DAS == 0) {
                             if (board.right()) {
                                 DAS = 6;
@@ -196,8 +277,8 @@ public class TetrisGameLoop implements GameLoop {
                             DAS--;
                     }
                     normalGrav();
-                } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-                    if (!Gdx.input.isKeyPressed(Input.Keys.DOWN) && !Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                } else if (key_left_pressed) {
+                    if (!key_down_pressed) {
                         if (DAS == 0) {
                             if (board.left()) {
                                 DAS = 6;
@@ -210,10 +291,10 @@ public class TetrisGameLoop implements GameLoop {
                             DAS--;
                     }
                     normalGrav();
-                } else if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+                } else if (key_down_just_pressed) {
                     downUnheld = true;
                     dropcount = 3;
-                } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                } else if (key_down_pressed) {
                     if (downUnheld) {
                         if (level < 29) {
                             gravity = 2;
@@ -223,23 +304,23 @@ public class TetrisGameLoop implements GameLoop {
                             dropPoints = 10;
                     }
                 }
-                if (!Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                if (!key_down_pressed) {
                     normalGrav();
                     dropPoints = 0;
                 }
 
 
-                if (Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT)) {
+                if (key_show_next_just_pressed) {
                     showNext = !showNext;
                 }
 
-                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                if (key_pause_just_pressed) {
                     gameControls.getMusic().pause();
                     gameControls.setPaused(true);
                 }
 
 
-                if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
+                if (key_rotate_right_just_pressed) {
                     if (ABTimer == 0) {
                         rotate.play();
                         board.rotateCW();
@@ -247,7 +328,7 @@ public class TetrisGameLoop implements GameLoop {
                     }
                     ABTimer++;
                 }
-                if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
+                if (key_rotate_left_just_pressed) {
                     if (ABTimer == 0) {
                         ABTimer += 2;
                         rotate.play();
@@ -260,11 +341,11 @@ public class TetrisGameLoop implements GameLoop {
                 }
             } else {
                 ARE--;
-                if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+                if (key_down_just_pressed) {
                     ARE = 0;
                     dropcount = 3;
                 }
-                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                if (key_pause_just_pressed) {
                     gameControls.getMusic().pause();
                     gameControls.setPaused(true);
                 }
@@ -336,6 +417,18 @@ public class TetrisGameLoop implements GameLoop {
                 }
             }
         }
+
+        resetJustPressed();
+    }
+
+    private void resetJustPressed() {
+        key_right_just_pressed = false;
+        key_left_just_pressed = false;
+        key_down_just_pressed = false;
+        key_show_next_just_pressed = false;
+        key_pause_just_pressed = false;
+        key_rotate_right_just_pressed = false;
+        key_rotate_left_just_pressed = false;
     }
 
     private void newPiece() {
@@ -637,7 +730,7 @@ public class TetrisGameLoop implements GameLoop {
             }
             if (endCurtain > 0 && gameControls.getFrameCounter() == 0)
                 endCurtain--;
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && endCurtain == 0) {
+            if (key_pause_just_pressed && endCurtain == 0) {
                 for (int i = 19; i >= endCurtain; i--) {
                     curtain[19 - i].dispose();
                 }
