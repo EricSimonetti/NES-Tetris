@@ -13,11 +13,19 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 public class NesTetris extends ApplicationAdapter implements CommonGameControls {
     private final double FRAME_PERIOD = (1 / 60.0988) * 1000;
     int frameCounter = 0;
     private boolean paused;
-    private GameLoop gameLoop;
+    private final List<GameLoop> gameLoops = new ArrayList<>();
     private boolean legal;
     private long legalTimer;
     private boolean title;
@@ -33,10 +41,15 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
     private boolean menuA;
     private boolean topLevel;
     private int levelSelect;
-    private boolean end;
+    private final Map<Integer, Boolean> ends = new HashMap<>();
     private TextureAtlas textureAtlas;
     private SpriteBatch batch;
     private Texture img;
+    private final int width;
+
+    public NesTetris(int width) {
+        this.width = width;
+    }
 
 
     public static Color valueOf(String hex) {
@@ -73,24 +86,28 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
         music.setLooping(true);
 
         musicSelect = 0;
-        end = false;
 
         menuShift = Gdx.audio.newSound(Gdx.files.internal("sfx/menu.mp3"));
         beep = Gdx.audio.newSound(Gdx.files.internal("sfx/menuSelect.mp3"));
         beepAlt = Gdx.audio.newSound(Gdx.files.internal("sfx/menuSelect-alt.mp3"));
         pauseBeep = Gdx.audio.newSound(Gdx.files.internal("sfx/pause.mp3"));
 
-        gameLoop = new TetrisGameLoop(textureAtlas, batch, this);
+        gameLoops.add(new TetrisGameLoop(true, 1, width, textureAtlas, this));
+        gameLoops.add(new TetrisGameLoop(false, 2, width, textureAtlas, this));
+
+        gameLoops.forEach(gameLoop -> {
+            ends.put(gameLoop.getPlayerNumber(), false);
+        });
     }
 
     @Override
-    public boolean getEnd() {
-        return end;
+    public boolean getEnd(int playerNumber) {
+        return ends.get(playerNumber);
     }
 
     @Override
-    public void setEnd(boolean end) {
-        this.end = end;
+    public void setEnd(boolean end, int playerNumber) {
+        ends.put(playerNumber, end);
     }
 
     @Override
@@ -123,7 +140,7 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
         beep.dispose();
         beepAlt.dispose();
         pauseBeep.dispose();
-        gameLoop.dispose();
+        gameLoops.forEach(GameLoop::dispose);
     }
 
     @Override
@@ -161,10 +178,10 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
             pauseUpdate();
             pauseRender();
         } else {
-            if (!end) {
-                gameLoop.update();
-            }
-            gameLoop.draw();
+            gameLoops.stream()
+                    .filter(gameLoop -> FALSE.equals(ends.get(gameLoop.getPlayerNumber())))
+                    .forEach(GameLoop::update);
+            gameLoops.forEach(GameLoop::draw);
         }
         long timeDiff = System.currentTimeMillis() - beginTime;
         long sleepTime = (long) (FRAME_PERIOD - timeDiff);
@@ -241,14 +258,14 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
             menuShift.play();
             if (musicSelect != 3) {
                 musicSelect++;
-                gameLoop.setMusic();
+                gameLoops.forEach(GameLoop::setMusic);
             }
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             menuShift.play();
             if (musicSelect != 0) {
                 musicSelect--;
-                gameLoop.setMusic();
+                gameLoops.forEach(GameLoop::setMusic);
             }
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && typeSelectA) {
@@ -343,8 +360,10 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
             beep.play();
             menuA = false;
-            gameLoop.setLevel(topLevel ? levelSelect : (levelSelect + 5));
-            gameLoop.setLevelUpdating(true);
+            gameLoops.forEach(gameLoop -> {
+                gameLoop.setLevel(topLevel ? levelSelect : (levelSelect + 5));
+                gameLoop.setLevelUpdating(true);
+            });
             img.dispose();
             img = new Texture("A.png");
             if (musicSelect != 3) {
@@ -416,7 +435,7 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
         topLevel = store2;
         legal = false;
         menuA = true;
-        gameLoop.setMusic();
+        gameLoops.forEach(GameLoop::setMusic);
         batch.begin();
     }
 

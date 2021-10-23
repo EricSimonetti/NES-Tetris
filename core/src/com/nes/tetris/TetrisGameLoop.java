@@ -11,12 +11,20 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TetrisGameLoop implements GameLoop {
 
+    private static final int[] HEIGHT_HELPER = {384, 339, 288, 240, 192, 147, 105};
     private final int START_X = 288, START_Y = 72;
     private final int BLOCK_SIZE = 24;
+    private final int[] gravities = {48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1};
+    private final TextureAtlas textureAtlas;
+    private final SpriteBatch batch;
+    private final CommonGameControls gameControls;
     int leftBlock = 4, rightBlock = 5;
+    private final boolean screenClearer;
+    private final int playerNumber;
     private Texture img;
     private ArrayList<Integer> linesBroken;
     private int ARE;
@@ -40,7 +48,6 @@ public class TetrisGameLoop implements GameLoop {
     private boolean broken;
     private Sound tetris;
     private Sound clear;
-    private final int[] gravities = {48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1};
     private boolean levelUpdating;
     private GamePiece gpp;
     private boolean fast;
@@ -48,19 +55,24 @@ public class TetrisGameLoop implements GameLoop {
     private String nextPiece;
     private Sprite[] stats;
     private int[] statNums;
-    private final TextureAtlas textureAtlas;
-    private final SpriteBatch batch;
+    private final int width;
     private int endTimer;
     private int endCurtain;
     private Music endLock;
-    private final CommonGameControls gameControls;
 
-    public TetrisGameLoop(TextureAtlas textureAtlas, SpriteBatch batch, CommonGameControls commonGameControls) {
+    public TetrisGameLoop(boolean screenClearer,
+                          int playerNumber,
+                          int width,
+                          TextureAtlas textureAtlas,
+                          CommonGameControls commonGameControls) {
+        this.screenClearer = screenClearer;
+        this.playerNumber = playerNumber;
+        this.width = width;
 
         this.textureAtlas = textureAtlas;
-        this.batch = batch;
         this.gameControls = commonGameControls;
 
+        batch = new SpriteBatch();
         init();
     }
 
@@ -91,15 +103,14 @@ public class TetrisGameLoop implements GameLoop {
         linesBroken = new ArrayList<>();
         lines = 0;
         stats = new Sprite[7];
-        int[] heightHelper = {384, 339, 288, 240, 192, 147, 105};
         for (int i = 0; i < 7; i++) {
             String peice = board.getPieceLetter(i);
             stats[i] = textureAtlas.createSprite(peice + "-" + level % 10 + "p");
-            int x = 78, y = heightHelper[i];
+            int x = 78, y = HEIGHT_HELPER[i];
             if (i == 3) x = 87;
             else if (i == 6) x = 72;
 
-            stats[i].setPosition(x, y);
+            stats[i].setPosition(x + getCurrentPlayerZeroX(), y);
         }
 
         gpp = new GamePiece(nextPiece, level % 10, textureAtlas);
@@ -111,6 +122,12 @@ public class TetrisGameLoop implements GameLoop {
         shift = Gdx.audio.newSound(Gdx.files.internal("sfx/shift.mp3"));
         tetris = Gdx.audio.newSound(Gdx.files.internal("sfx/tetris.mp3"));
         clear = Gdx.audio.newSound(Gdx.files.internal("sfx/clear.mp3"));
+
+    }
+
+    @Override
+    public int getPlayerNumber() {
+        return playerNumber;
     }
 
     @Override
@@ -140,8 +157,8 @@ public class TetrisGameLoop implements GameLoop {
                         lock += 2;//
                         ARE = (lock / 4) * 2 + 10;
                         newPiece();
-                        if (!gameControls.getEnd()) {
-                            gameControls.setEnd(board.testEnd());
+                        if (!gameControls.getEnd(getPlayerNumber())) {
+                            gameControls.setEnd(board.testEnd(), getPlayerNumber());
                         }
                     }
                 }
@@ -342,27 +359,31 @@ public class TetrisGameLoop implements GameLoop {
         }
     }
 
+    private int getCurrentPlayerZeroX() {
+        return width * (playerNumber - 1);
+    }
 
     @Override
     public void draw() {
-        Gdx.gl.glClearColor(1, 1, 1, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        if (screenClearer) {
+            Gdx.gl.glClearColor(1, 1, 1, 1);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        }
 
         batch.begin();
-        batch.draw(img, 0, 0);
+        batch.draw(img, getCurrentPlayerZeroX(), 0);
         if (levelUpdating) {
             gpp.setLevel(level);
             gamePiece.setLevel(level);
             setLevel(level, board.getSprites(), batch);
-            int[] heightHelper = {384, 339, 288, 240, 192, 147, 105};
             for (int i = 0; i < 7; i++) {
                 String peice = board.getPieceLetter(i);
                 stats[i] = textureAtlas.createSprite(peice + "-" + (level % 10) + "p");
-                int x = 78, y = heightHelper[i];
+                int x = 78, y = HEIGHT_HELPER[i];
                 if (i == 3) x = 87;
                 else if (i == 6) x = 72;
 
-                stats[i].setPosition(x, y);
+                stats[i].setPosition(x + getCurrentPlayerZeroX(), y);
             }
         }
 
@@ -391,7 +412,7 @@ public class TetrisGameLoop implements GameLoop {
         drawStats(batch);
         drawLines(batch);
 
-        if (gameControls.getEnd()) {
+        if (gameControls.getEnd(getPlayerNumber())) {
             endRender(batch);
         }
 
@@ -471,17 +492,17 @@ public class TetrisGameLoop implements GameLoop {
     private void gridI(int x, int y, int r, GamePiece gamePiece, SpriteBatch batch) {
         int thisX, thisY;
         if (r == 0 || r == 2) {
-            thisX = (x * BLOCK_SIZE + START_X) - (2 * BLOCK_SIZE);
+            thisX = (x * BLOCK_SIZE + START_X + getCurrentPlayerZeroX()) - (2 * BLOCK_SIZE);
             thisY = (y * BLOCK_SIZE + START_Y);
         } else {
-            thisX = (x * BLOCK_SIZE + START_X);
+            thisX = (x * BLOCK_SIZE + START_X + getCurrentPlayerZeroX());
             thisY = (y * BLOCK_SIZE + START_Y) - BLOCK_SIZE;
         }
         gamePiece.draw("I", thisX, thisY, r, batch);
     }
 
     private void gridTZSJLO(String piece, int x, int y, int r, GamePiece gpp, SpriteBatch batch) {
-        int thisX = (x * BLOCK_SIZE + START_X) - BLOCK_SIZE;
+        int thisX = (x * BLOCK_SIZE + START_X + getCurrentPlayerZeroX()) - BLOCK_SIZE;
         int thisY = (y * BLOCK_SIZE + START_Y) - BLOCK_SIZE;
         gpp.draw(piece, thisX, thisY, r, batch);
     }
@@ -496,6 +517,9 @@ public class TetrisGameLoop implements GameLoop {
         String[] numbers = points.split("");
         String[] topNumbers = {"0", "1", "0", "0", "0", "0"};
         int[] widthHelper = {576, 600, 624, 648, 672, 696};
+        widthHelper = Arrays.stream(widthHelper)
+                .map(operand -> operand + getCurrentPlayerZeroX())
+                .toArray();
         Sprite[] scoreboard = new Sprite[6];
         Sprite[] top = new Sprite[6];
         for (int i = 0; i < 6; i++) {
@@ -518,6 +542,9 @@ public class TetrisGameLoop implements GameLoop {
         String[] levelStrArr = lvl.split("");
         Sprite[] levelarr = new Sprite[2];
         int[] widthHelper = {624, 648};
+        widthHelper = Arrays.stream(widthHelper)
+                .map(operand -> operand + getCurrentPlayerZeroX())
+                .toArray();
         for (int i = 0; i < 2; i++) {
             levelarr[i] = textureAtlas.createSprite(levelStrArr[i]);
             levelarr[i].setPosition(widthHelper[i], 171);
@@ -551,7 +578,7 @@ public class TetrisGameLoop implements GameLoop {
         for (int i = 0; i < 7; i++) {
             for (int j = 0; j < 3; j++) {
                 statSprites[i][j] = textureAtlas.createSprite(allStats[i][j]);
-                statSprites[i][j].setPosition(144 + wgap * j, 99 + hgap * i);
+                statSprites[i][j].setPosition(144 + getCurrentPlayerZeroX() + wgap * j, 99 + hgap * i);
                 statSprites[i][j].draw(batch);
             }
         }
@@ -567,6 +594,9 @@ public class TetrisGameLoop implements GameLoop {
         String[] lineStrArr = ln.split("");
         Sprite[] lineArr = new Sprite[3];
         int[] widthHelper = {456, 480, 504};
+        widthHelper = Arrays.stream(widthHelper)
+                .map(operand -> operand + getCurrentPlayerZeroX())
+                .toArray();
         for (int i = 0; i < 3; i++) {
             lineArr[i] = textureAtlas.createSprite(lineStrArr[i]);
             lineArr[i].setPosition(widthHelper[i], 603);
@@ -587,7 +617,7 @@ public class TetrisGameLoop implements GameLoop {
             width = 24 * 3;
         }
         int x = ((103 - width) / 2) + 573, y = ((99 - height) / 2) + 261;
-        gpp.draw(nextPiece, x, y, 0, batch);
+        gpp.draw(nextPiece, x + getCurrentPlayerZeroX(), y, 0, batch);
     }
 
     private void endRender(SpriteBatch batch) {
@@ -602,7 +632,7 @@ public class TetrisGameLoop implements GameLoop {
             Texture[] curtain = new Texture[20 - endCurtain];
             for (int i = 19; i >= endCurtain; i--) {
                 curtain[19 - i] = new Texture("C-" + (level % 10) + ".png");
-                batch.draw(curtain[19 - i], START_X, START_Y + 24 * i);
+                batch.draw(curtain[19 - i], START_X + getCurrentPlayerZeroX(), START_Y + 24 * i);
             }
             if (endCurtain > 0 && gameControls.getFrameCounter() == 0)
                 endCurtain--;

@@ -4,9 +4,9 @@ import com.badlogic.gdx.audio.Music;
 
 public interface CommonGameControls {
 
-    boolean getEnd();
+    boolean getEnd(int playerNumber);
 
-    void setEnd(boolean end);
+    void setEnd(boolean end, int playerNumber);
 
     int getMusicSelect();
 
