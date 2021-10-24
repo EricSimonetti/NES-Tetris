@@ -56,7 +56,7 @@ public class TetrisGameLoop implements GameLoop {
     private int DAS;
     private Sound shift;
     private int ABTimer;
-    private int firstlevel;
+    private int firstlevelLines;
     private boolean downUnheld;
     private int leveled;
     private int level;
@@ -124,7 +124,7 @@ public class TetrisGameLoop implements GameLoop {
         level = 0;
         leveled = 0;
         levelUpdating = false;
-        firstlevel = Math.min((level * 10 + 10), Math.max(100, (level * 10 - 50)));
+        firstlevelLines = getFirstLevelLines(level);
         gravity = gravities[level];
         dropcount = gravity;
         downUnheld = true;
@@ -207,6 +207,10 @@ public class TetrisGameLoop implements GameLoop {
         });
     }
 
+    private int getFirstLevelLines(int level) {
+        return Math.min((level * 10 + 10), Math.max(100, (level * 10 - 50)));
+    }
+
     @Override
     public int getPlayerNumber() {
         return playerNumber;
@@ -220,6 +224,7 @@ public class TetrisGameLoop implements GameLoop {
     @Override
     public void setLevel(int level) {
         this.level = level;
+        this.firstlevelLines = getFirstLevelLines(level);
     }
 
     @Override
@@ -389,7 +394,8 @@ public class TetrisGameLoop implements GameLoop {
                 leftBlock = 4;
                 rightBlock = 5;
                 lines += store.size();
-                if ((lines > firstlevel && leveled == 0) || (lines > firstlevel + 10 * leveled && leveled > 0)) {
+                if ((lines > firstlevelLines && leveled == 0)
+                        || (lines > firstlevelLines + 10 * leveled && leveled > 0)) {
                     level++;
                     leveled++;
                     gravity = gravities[level];
@@ -507,7 +513,7 @@ public class TetrisGameLoop implements GameLoop {
         drawLines(batch);
 
         if (gameControls.getEnd(getPlayerNumber())) {
-            endRender(batch);
+//            endRender(batch);
         }
 
         batch.end();

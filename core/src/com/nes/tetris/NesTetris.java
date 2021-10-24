@@ -67,6 +67,10 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
     }
 
     private void init() {
+        float multiplier = 1.3f;
+        Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getWidth()),
+                (int) (Gdx.graphics.getHeight() * multiplier));
+
         textureAtlas = new TextureAtlas("sprites.txt");
         batch = new SpriteBatch();
         img = new Texture("A.png");
@@ -94,7 +98,7 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
 
 
         long timeInMillis = Calendar.getInstance().getTimeInMillis();
-
+//TODO после завершения игры одним игроком у второго начинает тормозить, после отключения endRender стало норм
         gameLoops.add(new TetrisGameLoop(true, 1, width, timeInMillis, textureAtlas, this));
         gameLoops.add(new TetrisGameLoop(false, 2, width, timeInMillis, textureAtlas, this));
 
@@ -364,7 +368,8 @@ public class NesTetris extends ApplicationAdapter implements CommonGameControls 
             beep.play();
             menuA = false;
             gameLoops.forEach(gameLoop -> {
-                gameLoop.setLevel(topLevel ? levelSelect : (levelSelect + 5));
+                int level = topLevel ? levelSelect : (levelSelect + 5);
+                gameLoop.setLevel(level + 0);
                 gameLoop.setLevelUpdating(true);
             });
             img.dispose();
