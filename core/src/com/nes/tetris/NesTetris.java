@@ -86,6 +86,8 @@ public class NesTetris extends ApplicationAdapter {
 	private GamePiece gpp;
 	private GamePiece gamePiece;
 
+	private Texture curtain;
+
 	@Override
 	public void create() {
 		init();
@@ -526,21 +528,20 @@ public class NesTetris extends ApplicationAdapter {
 			music.stop();
 			endLock.play();
 			endTimer--;
+			curtain = new Texture("C-" + (level % 10) + ".png");
 		}
 		else if(endTimer > 0){
 			endTimer--;
 		}
 		if(endTimer == 0) {
-			Texture[] curtain = new Texture[20 - endCurtain];
 			for (int i = 19; i >= endCurtain; i--) {
-				curtain[19 - i] = new Texture("C-" + (level % 10) + ".png");
-				batch.draw(curtain[19 - i], START_X, START_Y + 24 * i);
+				batch.draw(curtain, START_X, START_Y + 24 * i);
 			}
 			if (endCurtain > 0 && frameCounter == 0)
 				endCurtain--;
 			if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && endCurtain == 0) {
 				for (int i = 19; i >= endCurtain; i--) {
-					curtain[19 - i].dispose();
+					curtain.dispose();
 				}
 				reset();
 				menuA = true;
